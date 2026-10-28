@@ -211,6 +211,26 @@ def test_centered_short_final_comic_row_stays_in_its_bubble() -> None:
         row("tomorrow.", 250, 125, 350),
     ]}) == ["We can continue our journey tomorrow."]
 
+def test_scan_preview_is_encoded_only_when_requested():
+    import threading
+    service = object.__new__(CaptureService)
+    service._preview, service._preview_image, service._preview_source = b"", None, None
+    service._preview_lock = threading.RLock()
+    encoded = []
+    service._encode_preview = lambda image: encoded.append(image) or f"jpeg{len(encoded)}".encode()
+    assert service.preview_bytes() == b""
+    first, second = Image.new("RGB", (4, 2)), Image.new("RGB", (4, 2))
+    service._set_preview(first)
+    service._set_preview(second)
+    assert encoded == []  # Scans without a viewer never encode.
+    assert service.preview_bytes() == b"jpeg1"
+    assert service.preview_bytes() == b"jpeg1"  # Cached until the next scan.
+    assert encoded == [second]
+    service._set_preview(first)
+    assert service.preview_bytes() == b"jpeg2"
+    assert encoded == [second, first]
+
+
 def test_unprepared_language_blocks_capture_before_ocr_but_allows_preview(monkeypatch):
     from backend import capture as module
     from backend.models import CaptureRegion

@@ -107,6 +107,8 @@ class CaptureService:
         self._snapshot = CaptureSnapshot()
         self._snapshot_lock = threading.RLock()
         self._preview = b""
+        self._preview_image: Image.Image | None = None
+        self._preview_source: Image.Image | None = None
         self._preview_lock = threading.RLock()
         self._window_frame = threading.local()
         self._background_capture = BackgroundCapture()
@@ -157,7 +159,15 @@ class CaptureService:
 
     def preview_bytes(self) -> bytes:
         with self._preview_lock:
-            return self._preview
+            image = self._preview_image
+            if image is None or image is self._preview_source:
+                return self._preview
+        # Encode outside the lock so a scan never waits for a preview request.
+        encoded = self._encode_preview(image)
+        with self._preview_lock:
+            if self._preview_image is image:
+                self._preview, self._preview_source = encoded, image
+        return encoded
 
     def preview_for_region(self, region: CaptureRegion, picture_area: str | None = None) -> bytes:
         settings = self.settings.get()
@@ -1686,9 +1696,11 @@ class CaptureService:
         return Image.frombytes("RGB", shot.size, shot.rgb)
 
     def _set_preview(self, image: Image.Image) -> None:
-        encoded = self._encode_preview(image)
+        # JPEG encoding costs 15-45 ms per scan and only Setup's live preview
+        # reads it. Keep the crop (never modified after capture) and encode
+        # it once when requested.
         with self._preview_lock:
-            self._preview = encoded
+            self._preview_image = image
 
     @staticmethod
     def _encode_preview(image: Image.Image) -> bytes:

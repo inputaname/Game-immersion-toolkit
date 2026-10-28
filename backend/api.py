@@ -1560,7 +1560,7 @@ async def capture_preview(
             raise HTTPException(status_code=422, detail=str(error)) from error
         preview = await asyncio.to_thread(runtime.capture.preview_for_region, region, picture_area)
     else:
-        preview = runtime.capture.preview_bytes()
+        preview = await asyncio.to_thread(runtime.capture.preview_bytes)
     if not preview:
         raise HTTPException(status_code=404, detail="No capture preview is available yet")
     return Response(
