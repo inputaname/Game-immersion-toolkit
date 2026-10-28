@@ -29,7 +29,9 @@ if (-not $basePython -and (Get-Command py -ErrorAction SilentlyContinue)) {
     if ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $candidate)) { $basePython = $candidate }
 }
 if (-not $basePython) { throw 'Python 3.12 was not found. Install Python 3.12 with the Windows py launcher, then retry.' }
-$pythonVersion = & $basePython -c 'import sys; print("%d.%d" % sys.version_info[:2])'
+# Windows PowerShell 5.1 strips embedded double quotes from native arguments,
+# so inline Python passed with -c must not contain any.
+$pythonVersion = & $basePython -c 'import sys; print(sys.version_info[0], sys.version_info[1], sep=chr(46))'
 if ($LASTEXITCODE -ne 0 -or $pythonVersion -ne '3.12') { throw 'Python 3.12 is required for the locked OCR dependencies. Install it with the Windows py launcher.' }
 
 $wasRunning = $false
@@ -50,7 +52,7 @@ if (-not (Test-Path -LiteralPath $venvPython)) {
     & $basePython -m venv $venvDir
     if ($LASTEXITCODE -ne 0) { throw 'Could not create the Python environment.' }
 }
-$environmentVersion = & $venvPython -c 'import sys; print("%d.%d" % sys.version_info[:2])'
+$environmentVersion = & $venvPython -c 'import sys; print(sys.version_info[0], sys.version_info[1], sep=chr(46))'
 if ($LASTEXITCODE -ne 0 -or $environmentVersion -ne '3.12') { throw 'The existing toolkit environment must use Python 3.12. See INSTALL.md for environment repair instructions.' }
 
 & $venvPython -m pip install --disable-pip-version-check --timeout 120 --retries 8 -r requirements.lock.txt

@@ -21,7 +21,8 @@ try {
 using System;
 public class SetupPythonFixture {
     public static int Main(string[] args) {
-        if (args.Length == 2 && args[0] == "-c" && args[1].Contains("sys.version_info")) Console.WriteLine("3.12");
+        // Windows PowerShell 5.1 would strip embedded quotes and break this code.
+        if (args.Length == 2 && args[0] == "-c" && args[1].Contains("sys.version_info")) { if (args[1].IndexOf('"') >= 0) return 1; Console.WriteLine("3.12"); }
         return 0;
     }
 }
