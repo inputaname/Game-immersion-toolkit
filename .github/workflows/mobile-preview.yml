@@ -57,15 +57,15 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
           cache: npm
       - run: npm ci --ignore-scripts
-      - uses: actions/cache@v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/AppData/Local/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('node_modules/playwright/package.json') }}
@@ -78,10 +78,10 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
           cache: npm
@@ -98,7 +98,7 @@ jobs:
         run: node scripts/mobile-vdo-source-e2e.mjs && node scripts/mobile-source-e2e.mjs
       - name: Retain owned native WebKit fixture diagnostics
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: native-webkit-diagnostics
           path: |
@@ -111,10 +111,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
           cache: npm
@@ -123,7 +123,7 @@ jobs:
       - run: npm run audit:public
       - name: Check capture and library logic
         run: node scripts/prepare-mobile-assets.mjs && node --test tests/mobile-publication.test.mjs tests/mobile-capture.test.mjs tests/mobile-library.test.mjs tests/mobile-pairing-qr.test.mjs tests/mobile-recovery.test.mjs tests/mobile-vault.test.mjs tests/mobile-gateway.test.mjs tests/mobile-transcript.test.mjs tests/mobile-frame-source.test.mjs tests/mobile-vdo-source.test.mjs tests/mobile-receiver-source.test.mjs
-      - uses: actions/cache@v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-ubuntu-24.04-${{ runner.arch }}-${{ hashFiles('node_modules/playwright/package.json') }}
@@ -155,7 +155,7 @@ jobs:
         run: node scripts/ocr-packs-e2e.mjs
       - name: Retain owned browser-fixture diagnostics
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mobile-test-diagnostics
           path: |
@@ -168,12 +168,12 @@ jobs:
             output/playwright/mobile-source-*-failure.json
           retention-days: 3
       - name: Retain reviewed static build
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: companion-${{ github.sha }}
           path: ${{ steps.package.outputs.directory }}
           retention-days: 7
-      - uses: actions/upload-pages-artifact@v5
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         if: github.ref == 'refs/heads/main'
         with:
           path: ${{ steps.package.outputs.directory }}
@@ -193,10 +193,10 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
       - name: Publish HTTPS preview
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
       - name: Record deployment URL
         env:
           PREVIEW_URL: ${{ steps.deployment.outputs.page_url }}

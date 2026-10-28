@@ -26,11 +26,11 @@ jobs:
     # separately verify GitHub's synthetic merge commit and both event parents.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
       - run: node scripts/prepare-release-version.mjs
@@ -39,7 +39,7 @@ jobs:
       - run: npm run audit:public
       - name: Upload safe audit identity
         if: ${{ always() && hashFiles('output/checks/ci/source-audit.json') != '' }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ci-source-audit
           path: output/checks/ci/source-audit.json
@@ -50,12 +50,12 @@ jobs:
       full: ${{ steps.scope.outputs.full }}
       scope_valid: ${{ steps.scope.outputs.scope_valid }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
           # Application checks use this exact event merge SHA for PRs.
           ref: ${{ github.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
           cache: npm
@@ -76,7 +76,7 @@ jobs:
           CI_SCOPE_PYTHON: ${{ steps.plan.outputs.python }}
           CI_SCOPE_BROWSERS: ${{ steps.plan.outputs.browsers }}
         run: node scripts/check-ci-gate.mjs scope
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         if: steps.scope.outputs.python == 'true'
         with:
           python-version: '3.12'
@@ -86,14 +86,14 @@ jobs:
         if: steps.scope.outputs.python == 'true'
       - run: npm ci
         if: steps.scope.outputs.dependencies == 'true'
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         if: steps.scope.outputs.full == 'true'
         with:
           dotnet-version: '10.0.x'
       - name: Compile owned NTE reader without game assets
         if: steps.scope.outputs.full == 'true'
         run: dotnet build scripts/game-readers/NteReader.csproj -c Release -o data/ci-reader -p:BaseIntermediateOutputPath="${{ github.workspace }}/data/ci-reader-obj/" --nologo
-      - uses: actions/cache@v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: steps.scope.outputs.browsers == 'true' && steps.scope.outputs.full != 'true'
         with:
           path: ~/AppData/Local/ms-playwright
@@ -107,7 +107,7 @@ jobs:
           # The separate source-audit job checks PR author/history metadata.
           CHECK_SKIP_PUBLIC_AUDIT: ${{ github.event_name == 'pull_request' && 'true' || 'false' }}
         run: node scripts/check-changed.mjs ${{ (startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch') && '--full' || '' }}
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: steps.scope.outputs.full == 'true'
         with:
           name: checked-frontend
@@ -116,7 +116,7 @@ jobs:
           retention-days: 7
       - name: Upload safe integration evidence
         if: ${{ always() && hashFiles('output/checks/ci/integration.json', 'output/checks/runs/*.json', 'output/checks/latest.json') != '' }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ci-integration
           path: |
@@ -136,30 +136,30 @@ jobs:
       matrix:
         suite: [desktop, setup, capture, offline, ocr]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 2
           ref: ${{ github.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
           cache: npm
       - run: node scripts/prepare-release-version.mjs
       - name: Verify the browser integration commit
         run: node scripts/check-ci-gate.mjs checkout browser
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         if: matrix.suite == 'setup'
         with:
           python-version: '3.12'
       - run: python -m pip install -r requirements.lock.txt
         if: matrix.suite == 'setup'
       - run: npm ci --ignore-scripts
-      - uses: actions/cache@v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/AppData/Local/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('node_modules/playwright/package.json') }}
       - run: npx playwright install chromium firefox webkit
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: checked-frontend
           path: dist/
@@ -168,7 +168,7 @@ jobs:
         run: node scripts/check-evidence.mjs --browser-suite ${{ matrix.suite }}
       - name: Upload safe browser evidence
         if: ${{ always() && hashFiles('output/checks/ci/browser.json', 'output/checks/runs/*.json', 'output/checks/latest.json') != '' }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ci-browser-${{ matrix.suite }}
           path: |
@@ -183,11 +183,11 @@ jobs:
     needs: [source-audit, check, browser-checks]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 2
           ref: ${{ github.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
       - name: Verify the gate integration commit
@@ -202,7 +202,7 @@ jobs:
         run: node scripts/check-ci-gate.mjs required
       - name: Upload safe gate evidence
         if: ${{ always() && hashFiles('output/checks/ci/required-checks.json') != '' }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ci-required-checks
           path: output/checks/ci/required-checks.json
@@ -213,10 +213,10 @@ jobs:
     needs: [source-audit, check, browser-checks, required-checks]
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: ${{ github.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
           cache: npm
@@ -224,7 +224,7 @@ jobs:
       - name: Verify the package source commit
         run: node scripts/check-ci-gate.mjs checkout package
       - run: npm ci --ignore-scripts
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: checked-frontend
           path: dist/
@@ -238,7 +238,7 @@ jobs:
         run: node scripts/check-evidence.mjs --candidate
       - name: Upload safe package evidence
         if: ${{ always() && hashFiles('output/checks/ci/package.json', 'output/checks/runs/*.json', 'output/checks/latest.json') != '' }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ci-package
           path: |
@@ -246,7 +246,7 @@ jobs:
             output/checks/runs/*.json
             output/checks/latest.json
           retention-days: 7
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: tested-release-assets
           path: |
@@ -265,7 +265,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: tested-release-assets
           path: release
