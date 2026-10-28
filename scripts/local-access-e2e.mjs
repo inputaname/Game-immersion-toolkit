@@ -86,6 +86,17 @@ try {
       const actual = await observe();
       for (const call of ['start','lines','audio','setup','setup_complete','status']) assert(actual.calls.includes(call), `${name}: ${call} reached synthetic runtime`);
       assert(actual.received.some(item => item.method === 'OPTIONS' && item.path === '/api/setup/complete'), `Real browser preflight reached server: ${JSON.stringify(actual.received)}`);
+      // The companion loads voice clips as crossorigin media, which carries
+      // Origin even where localhost and 127.0.0.1 are different sites.
+      const media = await page.evaluate(api => new Promise(resolve => {
+        const audio = new Audio();
+        audio.crossOrigin = 'anonymous';
+        const timer = setTimeout(() => resolve('timeout'), 5000);
+        audio.onloadedmetadata = () => {clearTimeout(timer); resolve('loaded');};
+        audio.onerror = () => {clearTimeout(timer); resolve('error');};
+        audio.src = api + '/api/lines/1/audio';
+      }), api);
+      assert.equal(media, 'loaded', `${name}: companion voice clip loads from ${origin}`);
       await page.close();
     }
     await reset();
@@ -108,8 +119,23 @@ try {
     assert.equal(rejected.post, 'blocked');
     assert.equal(rejected.patch, 'blocked');
     assert.deepEqual(rejected.socket, {opened:false, message:false}, `${name}: no untrusted WebSocket accept or snapshot`);
+    // Image and no-cors GETs omit Origin; Sec-Fetch-Site still marks them
+    // cross-site. localhost and 127.0.0.1 are different sites on loopback.
+    await page.goto(`http://localhost:${servers[0].address().port}`);
+    await page.evaluate(async api => {
+      await fetch(api + '/api/lines', {mode:'no-cors'}).catch(() => {});
+      await new Promise(resolve => {
+        const image = new Image();
+        image.onload = image.onerror = resolve;
+        setTimeout(resolve, 5000);
+        image.src = api + '/api/lines/1/audio';
+      });
+    }, api);
     const actual = await observe();
     assert.deepEqual(actual.calls, [], `${name}: no rejected request side effect`);
+    for (const path of ['/api/lines', '/api/lines/1/audio']) {
+      assert(actual.received.some(item => item.path === path && item.origin === ''), `${name}: origin-less cross-site ${path} actually reached server`);
+    }
     for (const [type,path] of [['http','/api/capture/start'], ['http','/api/settings'], ['websocket','/api/ws']]) {
       assert(actual.received.some(item => item.type === type && item.path === path && item.origin === untrusted), `${name}: rejected ${path} actually reached server`);
     }

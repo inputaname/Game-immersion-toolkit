@@ -3,15 +3,21 @@
 Host                              Origin                              Result
 localhost / 127.0.0.1, valid port   http://localhost:3000 or :3001      allow
 localhost / 127.0.0.1, valid port   http://127.0.0.1:3000 or :3001      allow
-localhost / 127.0.0.1, valid port   absent                              allow scripts
+localhost / 127.0.0.1, valid port   absent, no Sec-Fetch-Site           allow scripts
+localhost / 127.0.0.1, valid port   absent, Sec-Fetch-Site not cross    allow
+localhost / 127.0.0.1, valid port   absent, cross-site or duplicated    deny
 localhost / 127.0.0.1, valid port   null, empty, unknown, malformed     deny
 localhost / 127.0.0.1, valid port   localhost lookalike / extra Origin deny
 other, absent, malformed Host      any                                 deny
 
 Missing Origin explicitly supports trusted non-browser clients on the PC,
 including installer status and updater capture fallback requests. It is not
-an authentication mechanism for untrusted local programs. Existing setup,
-Lexirise and updater action headers still apply, with or without Origin.
+an authentication mechanism for untrusted local programs. Browsers omit
+Origin for image, media and script GETs but send Sec-Fetch-Site, so a
+cross-site page cannot trigger reading lookups or load captures that way.
+The desktop frontend loads media with crossorigin so these carry Origin.
+Existing setup, Lexirise and updater action headers still apply, with or
+without Origin.
 Browser origins stay restricted to the existing desktop frontend ports;
 backend ports may vary while the updater prepares a replacement runtime.
 The same checks precede CORS preflight, HTTP handlers and WebSocket accept,
@@ -31,11 +37,14 @@ def local_access_allowed(headers):
     """Inspect raw headers so duplicates and malformed ports fail closed."""
     hosts = [value.decode('latin-1') for name, value in headers if name.lower() == b'host']
     origins = [value.decode('latin-1') for name, value in headers if name.lower() == b'origin']
+    sites = [value.decode('latin-1') for name, value in headers if name.lower() == b'sec-fetch-site']
     if len(hosts) != 1 or (host := _HOST.fullmatch(hosts[0])) is None:
         return False
     if host[1] is not None and not 1 <= int(host[1]) <= 65535:
         return False
-    return not origins or (len(origins) == 1 and origins[0] in COMPANION_ORIGINS)
+    if origins:
+        return len(origins) == 1 and origins[0] in COMPANION_ORIGINS
+    return not sites or (len(sites) == 1 and sites[0] in {'same-origin', 'same-site', 'none'})
 
 
 class LocalAccessMiddleware:

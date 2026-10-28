@@ -90,6 +90,44 @@ def test_rejected_http_never_dispatches_mutations(local_client, method, path, bo
     assert calls == []
 
 
+@pytest.mark.parametrize('site', ['same-origin', 'same-site', 'none', None])
+def test_browser_media_without_origin_allowed_unless_cross_site(local_client, site):
+    client, calls = local_client
+    headers = {'Sec-Fetch-Site': site} if site else {}
+    assert client.get('/api/lines', headers=headers).json() == []
+    assert calls == ['lines']
+
+
+@pytest.mark.parametrize('site', ['cross-site', 'Cross-Site', 'unknown', ''])
+def test_cross_site_request_without_origin_never_dispatches(local_client, site):
+    client, calls = local_client
+    headers = {'Sec-Fetch-Site': site}
+    assert client.get('/api/lines', headers=headers).status_code == 403
+    assert client.get('/api/capture/preview.jpg', headers=headers).status_code == 403
+    assert client.get('/api/lines/1/reading/lookup?start=0', headers=headers).status_code == 403
+    with pytest.raises(WebSocketDisconnect):
+        with client.websocket_connect('/api/ws', headers=headers):
+            pytest.fail('Cross-site WebSocket was accepted')
+    assert calls == []
+
+
+@pytest.mark.parametrize('origin', ORIGINS)
+def test_companion_cross_site_media_with_origin_allowed(local_client, origin):
+    client, calls = local_client
+    # localhost:3000 loading 127.0.0.1:8766 is cross-site but carries Origin.
+    response = client.get('/api/lines', headers={'Origin': origin, 'Sec-Fetch-Site': 'cross-site'})
+    assert response.status_code == 200
+    assert response.headers['access-control-allow-origin'] == origin
+    assert calls == ['lines']
+
+
+def test_duplicate_fetch_site_without_origin_rejected(local_client):
+    _, calls = local_client
+    assert_raw_denial([(b'host', b'127.0.0.1:8766'), (b'sec-fetch-site', b'same-site'),
+                       (b'sec-fetch-site', b'same-site')])
+    assert calls == []
+
+
 @pytest.mark.parametrize('host', BAD_HOSTS)
 def test_wrong_or_malformed_host_rejected_for_http_and_websocket(local_client, host):
     client, calls = local_client

@@ -802,7 +802,10 @@ function CompanionClient() {
   const playLine = useCallback((line: TranscriptLine) => {
     if (!line.has_audio) return;
     playback.current?.pause();
-    const audio = new Audio(`${API_URL}/api/lines/${line.id}/audio?v=${line.id}-${line.audio_source ?? 'recording'}`);
+    // Send Origin: the backend rejects cross-site media loads without one.
+    const audio = new Audio();
+    audio.crossOrigin = 'anonymous';
+    audio.src = `${API_URL}/api/lines/${line.id}/audio?v=${line.id}-${line.audio_source ?? 'recording'}`;
     audio.playbackRate = playbackRate;
     playback.current = audio;
     void audio.play();
@@ -1215,6 +1218,7 @@ function CompanionClient() {
             {capture?.active_game === selectedGame && capture?.window_bounds ? (
               <img
                 key={previewTick}
+                crossOrigin="anonymous"
                 src={`${API_URL}/api/capture/preview.jpg?${previewRegionQuery}`}
                 alt={`Live preview of the ${setupRegionLabel.toLowerCase()} capture region`}
               />
