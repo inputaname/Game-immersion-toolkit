@@ -43,6 +43,7 @@ from .accounts import AccountStore
 from .languages import translation_language, study_language, resolve_locale, GAME_LOCALES
 from .language_preparation import LanguagePreparation
 from .language_inventory import LanguageInventory
+from .ndi_source import NDI_LINK, NdiUnavailable, list_sources as list_ndi_sources
 from .windows import list_visible_windows, game_data_directory, installed_zzz_game_data_directory
 from .installation import InstallationService
 from .scoped_mobile_exports import ScopedMobileExports
@@ -1623,6 +1624,17 @@ def windows() -> list[dict[str, object]]:
         }
         for window in list_visible_windows()
     ]
+
+
+@app.get("/api/ndi/sources")
+async def ndi_sources(request: Request) -> dict:
+    # Discovery only lists sender names; it never opens a video receiver.
+    setup_access(request)
+    try:
+        sources = await asyncio.to_thread(list_ndi_sources)
+    except NdiUnavailable as error:
+        return {"available": False, "message": str(error), "sources": [], "link": NDI_LINK}
+    return {"available": True, "message": None, "sources": sources, "link": NDI_LINK}
 
 
 @app.websocket("/api/ws")

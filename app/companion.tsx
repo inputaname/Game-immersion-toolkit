@@ -11,6 +11,7 @@ import { ToolkitSetup } from './toolkit-setup';
 import {LanguageSetup} from './language-setup';
 import {GamePicker, useTargetLanguage} from './game-picker';
 import {GAME_NAMES, captureRegionKey, type GameId} from '../lib/games';
+import {NdiSourceSettings, type CaptureSourceSettings} from './ndi-source-settings';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
@@ -95,7 +96,7 @@ type Settings = Record<`${Exclude<GameId, 'zzz' | 'pragmata'>}_region`, CaptureR
   auto_start: boolean;
   save_unmatched: boolean;
   capture_unvoiced: boolean;
-};
+} & CaptureSourceSettings;
 type CaptureStatus = {
   visible_text_ids: string[];
   running: boolean;
@@ -1133,6 +1134,9 @@ function CompanionClient() {
             onChange={event => setDraftSettings(current => current ? {...current, capture_unvoiced: event.target.checked} : current)} /> {uiText('Include unvoiced dialogue')}
           </label>}
           <p className="toolkit-setup-note">{uiText('Applies to all games. Includes text the game identifies as unvoiced; missing voice files are reported separately. Saved history is kept when this is off.')}</p>
+          {draftSettings && selectedGame !== 'hito' && <NdiSourceSettings game={selectedGame}
+            value={{capture_source: draftSettings.capture_source ?? 'window', ndi_source: draftSettings.ndi_source ?? '', ndi_game: draftSettings.ndi_game ?? null}}
+            onChange={next => setDraftSettings(current => current ? {...current, ...next} : current)} />}
           {selectedGame === 'zzz' && draftSettings && <label>{uiText("Proxy voice")}<select aria-label={uiText("Proxy voice")} value={draftSettings.zzz_proxy_voice ?? 'unconfigured'}
               onChange={event => setDraftSettings(current => current ? { ...current, zzz_proxy_voice: event.target.value as Settings['zzz_proxy_voice'] } : current)}>
               <option value="unconfigured">{uiText("Choose the Proxy for variant lines")}</option>

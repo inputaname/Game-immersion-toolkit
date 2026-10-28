@@ -17,7 +17,7 @@ from oneocr import OcrEngine
 from PIL import Image
 
 from .config import SettingsStore
-from .games import GAME_PROFILES
+from .games import GAME_PROFILES, GameProfile
 from .steam_games import STEAM_GAMES
 from .models import CaptureRegion, CaptureSnapshot, TextMatch, TranscriptLine, is_comic_text_id
 from .storage import TranscriptStore
@@ -26,6 +26,7 @@ from .bilingual import normalize_subtitle
 from .pragmata import PragmataTextIndex
 from .hito import HitoTextIndex
 from .pragmata_audio import PragmataVoiceAssetService
+from .ndi_source import NDI_PROCESS, NdiCapture, NdiUnavailable
 from .windows import WindowInfo, executable_path_for_window, find_active_game_window, find_game_window
 from .window_capture import BackgroundCapture
 from .runtime_handoff import CaptureHandoff
@@ -171,7 +172,10 @@ class CaptureService:
 
     def preview_for_region(self, region: CaptureRegion, picture_area: str | None = None) -> bytes:
         settings = self.settings.get()
-        active = find_active_game_window(settings)
+        try:
+            active = self._find_active(settings)
+        except NdiUnavailable:
+            return b""
         if active is None:
             return b""
         profile, window = active
@@ -250,6 +254,8 @@ class CaptureService:
             pass
         self._task = None
         await asyncio.to_thread(self._background_capture.close)
+        if getattr(self, '_ndi', None) is not None:
+            await asyncio.to_thread(self._ndi.close)
         # A cancelled asyncio future cannot cancel native OCR. Drain its worker
         # before exporting state so the retiring runtime cannot emit afterward.
         await asyncio.wait_for(asyncio.get_running_loop().run_in_executor(self._executor, lambda: None), 15)
@@ -321,7 +327,11 @@ class CaptureService:
         epoch = self._scan_epoch
         self._scan_index += 1
         settings = self.settings.get()
-        active = find_active_game_window(settings)
+        waiting = "Waiting for a supported game"
+        try:
+            active = self._find_active(settings)
+        except NdiUnavailable as error:
+            active, waiting = None, str(error)
         now = datetime.now(timezone.utc).astimezone()
         if active is None:
             self._quantic_context_scope = None
@@ -332,7 +342,7 @@ class CaptureService:
             self._update_snapshot(
                 running=True,
                 phase="waiting_for_game",
-                message="Waiting for a supported game",
+                message=waiting,
                 active_game=None,
                 window_title=None,
                 window_bounds=None,
@@ -1677,11 +1687,34 @@ class CaptureService:
         height = max(1, min(window_y + window_height - top, max(50, round(window_height * region.height))))
         return left, top, width, height
 
+    def _find_active(self, settings) -> tuple[GameProfile, WindowInfo] | None:
+        if getattr(settings, 'capture_source', 'window') != 'ndi':
+            return find_active_game_window(settings)
+        game = settings.ndi_game
+        if game not in GAME_PROFILES or game == 'hito':
+            raise NdiUnavailable('Choose the game you are streaming over NDI in Capture setup.')
+        if getattr(self, '_ndi', None) is None:
+            self._ndi = NdiCapture()
+        image = self._ndi.frame(settings.ndi_source)
+        window = self._ndi.window(settings.ndi_source, image)
+        # Thread-local like window frames: preview requests and the OCR worker
+        # each crop the exact frame their own lookup returned.
+        self._window_frame.ndi = (window, image)
+        return GAME_PROFILES[game], window
+
     def _prepare_window_capture(self, window: WindowInfo) -> None:
         # Each worker/preview request owns its frame; a timed-out OCR worker
         # must not overwrite a replacement worker's capture or calibration.
         self._window_frame.image = None
         self._window_frame.bounds = window.bounds
+        if getattr(window, 'process_name', None) == NDI_PROCESS:
+            self._background_capture.close()
+            ndi_window, image = getattr(self._window_frame, 'ndi', (None, None))
+            if ndi_window != window:
+                # Never fall back to a desktop screenshot at the virtual bounds.
+                raise NdiUnavailable('The NDI frame changed during the scan. Capture retries automatically.')
+            self._window_frame.image = image
+            return
         self._window_frame.image = self._background_capture.frame(window)
 
     def _capture(self, bounds: tuple[int, int, int, int]) -> Image.Image:

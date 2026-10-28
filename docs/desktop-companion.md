@@ -11,6 +11,8 @@ The UI adapts to narrow/short windows and high browser/Windows zoom. Hito automa
 For mobile reading, [export a private library to On My iPhone](mobile-library.md), open it in the public companion, and use on-device OCR with bilingual transcripts and original voices. The PC can be off during play. Audio files must be reselected after reopening. A working sender is still required; [two-device capture and reconnect](mobile-capture.md) explains the unfinished native iPad sender and receiver testing.
 The [development guide](mobile-development.md) describes checked main-only Pages publication. Task branches produce review artifacts.
 
+To read a game on an iPhone, iPad or console through this PC without any relay, use [private NDI® capture on your local network](ndi-capture.md).
+
 OCR scales to game-window height across small windows, 4K and ultrawide layouts, and windowed captures exclude title bars/borders. See [OCR resolution support and offline screenshot checks](ocr-resolutions.md).
 
 Capture continues when the game loses focus or another window covers it. Background capture uses Windows Graphics Capture and keeps the same client-area calibration. Keep the game restored in windowed or borderless mode; minimized games or games that pause rendering cannot supply new subtitle frames.

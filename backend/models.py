@@ -97,6 +97,11 @@ class AppSettings(BaseModel):
     # at 92% cuts its final words. Start below the highlighted speaker strip.
     honkai3_region: CaptureRegion = Field(default_factory=lambda: CaptureRegion(left=.04, top=.72, width=.96, height=.24))
     honkai3_picture_area: Literal["window", "16:9"] = "window"
+    # "ndi" reads frames from an NDI source on the local network instead of a
+    # game window on this PC; ndi_game names the game being streamed.
+    capture_source: Literal["window", "ndi"] = "window"
+    ndi_source: str = Field(default="", max_length=256)
+    ndi_game: GameId | None = None
     scan_interval_ms: int = Field(default=250, ge=100, le=5000)
     stable_frames: int = Field(default=2, ge=1, le=8)
     fuzzy_threshold: float = Field(default=82.0, ge=50, le=100)
