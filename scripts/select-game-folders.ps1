@@ -29,14 +29,16 @@ $oldLocation = Get-Location
 try {
     Set-Location -LiteralPath $projectRoot
     $existing = (& $python -m scripts.configure_game_paths --list | ConvertFrom-Json)
-    $games = @(& $python -m scripts.configure_game_paths --catalog | ConvertFrom-Json)
+    # Windows PowerShell 5.1 emits a JSON array as one object; unroll it so
+    # each game gets its own row (PowerShell 7 already enumerates it).
+    $games = @(& $python -m scripts.configure_game_paths --catalog | ConvertFrom-Json | ForEach-Object { $_ })
     if ($LASTEXITCODE -ne 0) { throw 'Could not read the supported game catalog.' }
     for ($index = 0; $index -lt $games.Count; $index++) {
         $game = $games[$index].id; $name = $games[$index].name; $row = $index + 1
         $table.RowStyles.Add((New-Object System.Windows.Forms.RowStyle('Absolute', 55))) | Out-Null
         $label = New-Object System.Windows.Forms.Label; $label.Text = $name; $label.AutoSize = $true; $label.Anchor = 'Left'
-        $input = New-Object System.Windows.Forms.TextBox; $input.Dock = 'Fill'; $input.Anchor = 'Left,Right'; $input.Text = [string]$existing.$game
-        $browse = New-Object System.Windows.Forms.Button; $browse.Text = 'Browse...'; $browse.Dock = 'Fill'; $browse.Tag = $input
+        $pathBox = New-Object System.Windows.Forms.TextBox; $pathBox.Dock = 'Fill'; $pathBox.Anchor = 'Left,Right'; $pathBox.Text = [string]$existing.$game
+        $browse = New-Object System.Windows.Forms.Button; $browse.Text = 'Browse...'; $browse.Dock = 'Fill'; $browse.Tag = $pathBox
         $browse.Add_Click({
             $picker = New-Object System.Windows.Forms.FolderBrowserDialog
             $picker.Description = 'Select the installed game folder (not a ZIP or an extracted asset cache)'
@@ -45,8 +47,8 @@ try {
             if ($picker.ShowDialog($form) -eq 'OK') { $this.Tag.Text = $picker.SelectedPath }
             $picker.Dispose()
         })
-        $fields[$game] = $input
-        $table.Controls.Add($label, 0, $row); $table.Controls.Add($input, 1, $row); $table.Controls.Add($browse, 2, $row)
+        $fields[$game] = $pathBox
+        $table.Controls.Add($label, 0, $row); $table.Controls.Add($pathBox, 1, $row); $table.Controls.Add($browse, 2, $row)
     }
     $table.RowStyles.Add((New-Object System.Windows.Forms.RowStyle('Absolute', 55))) | Out-Null
     $buttons = New-Object System.Windows.Forms.FlowLayoutPanel; $buttons.Dock = 'Fill'; $buttons.FlowDirection = 'RightToLeft'
