@@ -83,6 +83,7 @@ export function commandPlan(checks, {scenarios = scenarioPlan([], checks), platf
   else {
     if (checks.includes('python')) npm('test:python');
     if (checks.includes('desktop')) npm('typecheck');
+    if (checks.some(x => ['desktop','mobile'].includes(x))) npm('lint');
     if (checks.some(x => ['desktop','mobile','selector'].includes(x))) npm('test');
     if (checks.includes('desktop')) npm('build');
     if (checks.includes('mobile')) npm('mobile:build');

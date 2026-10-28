@@ -29,28 +29,72 @@
     "build/**",
     "dist/**",
     "coverage/**",
-    "next-env.d.ts"
+    "next-env.d.ts",
+    "vendor/**"
   ],
   "rules": {
     "no-array-constructor": "error",
     "no-var": "error",
-    "prefer-const": "error",
+    "prefer-const": "warn",
     "prefer-rest-params": "error",
     "prefer-spread": "error",
     "import/no-anonymous-default-export": "warn",
     "react/display-name": "error",
     "react/jsx-no-comment-textnodes": "error",
-    "react/no-unescaped-entities": "error",
-    "react/react-compiler": "error",
+    "react/no-unescaped-entities": "warn",
     "react/require-render-return": "error",
     "react/rules-of-hooks": "error",
     "typescript/ban-ts-comment": "error",
-    "typescript/no-deprecated": "error",
+    "typescript/no-deprecated": "warn",
     "typescript/no-empty-object-type": "error",
     "typescript/no-explicit-any": "error",
     "typescript/no-namespace": "error",
     "typescript/no-require-imports": "error",
     "typescript/no-unnecessary-type-constraint": "error",
-    "typescript/no-unsafe-function-type": "error"
-  }
+    "typescript/no-unsafe-function-type": "error",
+    "jsx-a11y/prefer-tag-over-role": "warn",
+    "typescript/no-base-to-string": "warn",
+    "no-unused-vars": "warn",
+    "typescript/restrict-template-expressions": "warn",
+    "react/set-state-in-effect": "warn",
+    "typescript/require-array-sort-compare": "warn",
+    "react/refs": "warn",
+    "no-unused-expressions": "warn",
+    "import/namespace": "warn",
+    "typescript/unbound-method": "warn",
+    "react-hooks/exhaustive-deps": "warn",
+    "unicorn/prefer-string-starts-ends-with": "warn",
+    "unicorn/no-useless-spread": "warn",
+    "typescript/no-misused-spread": "warn",
+    "oxc/const-comparisons": "warn",
+    "jsx-a11y/label-has-associated-control": "warn",
+    "no-useless-escape": "warn",
+    "no-control-regex": "warn",
+    "typescript/no-unsafe-unary-minus": "warn",
+    "typescript/no-implied-eval": "warn",
+    "typescript/await-thenable": "warn",
+    "react/immutability": "warn",
+    "nextjs/no-img-element": "warn",
+    "jsx-a11y/no-noninteractive-element-interactions": "warn",
+    "jsx-a11y/click-events-have-key-events": "warn",
+    "no-unsafe-finally": "warn"
+  },
+  "overrides": [
+    {
+      "files": [
+        "tests/**"
+      ],
+      "rules": {
+        "typescript/no-floating-promises": "off"
+      }
+    },
+    {
+      "files": [
+        "**/*.cjs"
+      ],
+      "rules": {
+        "typescript/no-require-imports": "off"
+      }
+    }
+  ]
 }

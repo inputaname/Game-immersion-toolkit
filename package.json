@@ -17,7 +17,7 @@
     "test": "node scripts/prepare-mobile-assets.mjs && node --test tests/*.test.mjs",
     "test:python": "node scripts/python-tests.mjs",
     "test:infra": "node --test tests/check-selection.test.mjs tests/check-evidence.test.mjs tests/ci-gate.test.mjs tests/dev-doctor.test.mjs tests/python-runtime.test.mjs tests/e2e-preview.test.mjs tests/build-identity.test.mjs",
-    "check": "npm run typecheck && npm test && npm run test:python && npm run build",
+    "check": "npm run typecheck && npm run lint && npm test && npm run test:python && npm run build",
     "release": "node scripts/release.mjs",
     "lexirise:watch": "node scripts/lexirise-watch.mjs",
     "mobile:build": "node scripts/build-mobile-preview.mjs",

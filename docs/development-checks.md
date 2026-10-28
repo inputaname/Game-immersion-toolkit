@@ -23,7 +23,10 @@ a change. Preserve intended multilingual product text and test input.
 ## Current check selection
 
 Documentation changes check generated guides, links and publication safety.
-Python, desktop and mobile changes select their relevant checks. Unknown inputs
+Python, desktop and mobile changes select their relevant checks; desktop and
+mobile changes also run `npm run lint`. Lint rules with pre-existing violations
+are warnings until those are cleaned up, and `vendor/` is linted in its shared
+source repository. Unknown inputs
 and dependencies use the comprehensive gate; mixed desktop/mobile edits run unit
 tests once. Changes to the selector, evidence runner, shared test server, Python
 resolver or CI gate select the full suite. Mobile companion and offline update
